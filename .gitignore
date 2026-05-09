@@ -1,0 +1,17 @@
+# Composer dependencies
+/vendor/
+
+# PHPUnit cache/results
+.phpunit.result.cache
+/.phpunit.cache/
+
+# Test/build output
+/coverage/
+/build/
+/dist/
+
+# Logs
+*.log
+
+# IDE files
+/.idea/
