@@ -1,24 +1,31 @@
 {
-  "name": "d36dak/docx-from-templates",
-  "description": "A PHP package for generating DOCX documents from simple templates.",
+  "name": "d36dak/docx-builder",
+  "description": "A PHP package for programmatically building docx documents.",
   "type": "library",
   "license": "MIT",
   "autoload": {
     "psr-4": {
-      "D36Dak\\DocxFromTemplates\\": "src/"
+      "D36Dak\\DocxBuilder\\": "src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "D36Dak\\DocxFromTemplates\\Tests\\": "tests/"
+      "D36Dak\\DocxBuilder\\Tests\\": "tests/"
     }
   },
   "require": {
-    "php": "^8.2"
+    "php": "^8.2",
+    "ext-zip": "*",
+    "ext-dom": "*"
   },
   "require-dev": {
-    "phpunit/phpunit": "^11.0"
+    "phpunit/phpunit": "^11.0",
+    "squizlabs/php_codesniffer": "^4.0",
+    "phpstan/phpstan": "^2.1"
   },
   "minimum-stability": "stable",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "scripts": {
+    "analyse": "phpstan analyse"
+  }
 }

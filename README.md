@@ -1,2 +1,2 @@
-# docx-from-templates
-A PHP package for generating DOCX documents from templates.
+# docx-builder
+A PHP package for building DOCX documents programmatically.
