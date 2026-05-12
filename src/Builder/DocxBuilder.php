@@ -55,9 +55,17 @@ class DocxBuilder
         return $this;
     }
 
-    public function addImage(string $imagePath, int $pixelWidth, int $pixelHeight): self
+    /**
+     * @param array{
+     *     width: int,
+     *     height: int,
+     *     alignment?: 'left'|'right'|'center',
+     *     altText?: string,
+     * } $options
+     */
+    public function addImage(string $imagePath, array $options): self
     {
-        $this->document->addElement(new ImageElement($imagePath, $pixelWidth, $pixelHeight));
+        $this->document->addElement(new ImageElement($imagePath, $options));
 
         return $this;
     }
