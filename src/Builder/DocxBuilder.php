@@ -8,6 +8,7 @@ use D36Dak\DocxBuilder\Document\DocxDocument;
 use D36Dak\DocxBuilder\Document\Elements\ImageElement;
 use D36Dak\DocxBuilder\Document\Elements\ParagraphElement;
 use D36Dak\DocxBuilder\Document\Elements\TableElement;
+use D36Dak\DocxBuilder\Document\Elements\TextRunElement;
 use D36Dak\DocxBuilder\Renderer\RenderContext;
 use D36Dak\DocxBuilder\Writer\DocxWriter;
 
@@ -22,9 +23,24 @@ class DocxBuilder
         $this->writer = new DocxWriter();
     }
 
-    public function addParagraph(string $text): self
+    /**
+     * @param string|array<TextRunElement> $textRuns
+     * @param array{
+     *     alignment?: 'left'|'right'|'center'|'both',
+     *     spacingBefore?: int,
+     *     spacingAfter?: int,
+     *     lineSpacing?: float,
+     *     fontFamily?: string,
+     *     fontSize?: float,
+     *     color?: string,
+     *     bold?: bool,
+     *     italic?: bool,
+     *     underline?: bool,
+     * } $options
+     */
+    public function addParagraph(string|array $textRuns, array $options = []): self
     {
-        $this->document->addElement(new ParagraphElement($text));
+        $this->document->addElement(new ParagraphElement($textRuns, $options));
 
         return $this;
     }
