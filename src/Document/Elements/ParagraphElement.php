@@ -34,7 +34,42 @@ class ParagraphElement extends DocxElement
     private readonly array $textRunOptions;
 
     /**
-     * @param string|array<mixed> $textRuns
+     * @param array{
+     *     alignment?: 'left'|'right'|'center'|'both',
+     *     spacingBefore?: int,
+     *     spacingAfter?: int,
+     *     lineSpacing?: float,
+     *     fontFamily?: string,
+     *     fontSize?: float,
+     *     color?: string,
+     *     bold?: bool,
+     *     italic?: bool,
+     *     underline?: bool,
+     * } $options
+     * @param array<mixed>|null $textRuns
+     */
+    public function __construct(
+        string $text,
+        array $options = [],
+        ?array $textRuns = null,
+    ) {
+        $this->alignment = $this->normalizeAlignment($options['alignment'] ?? null);
+        $this->spacingBefore = $this->normalizeIntegerOption($options, 'spacingBefore');
+        $this->spacingAfter = $this->normalizeIntegerOption($options, 'spacingAfter');
+        $this->lineSpacing = $this->normalizeLineSpacing($options);
+        $this->textRunOptions = TextRunElement::normalizeOptions($options);
+
+        if ($textRuns === null) {
+            $this->textRuns = [new TextRunElement($text)];
+
+            return;
+        }
+
+        $this->textRuns = self::normalizeTextRuns($textRuns);
+    }
+
+    /**
+     * @param array<mixed> $textRuns
      * @param array{
      *     alignment?: 'left'|'right'|'center'|'both',
      *     spacingBefore?: int,
@@ -48,22 +83,17 @@ class ParagraphElement extends DocxElement
      *     underline?: bool,
      * } $options
      */
-    public function __construct(
-        string|array $textRuns,
-        array $options = [],
-    ) {
-        $this->alignment = $this->normalizeAlignment($options['alignment'] ?? null);
-        $this->spacingBefore = $this->normalizeIntegerOption($options, 'spacingBefore');
-        $this->spacingAfter = $this->normalizeIntegerOption($options, 'spacingAfter');
-        $this->lineSpacing = $this->normalizeLineSpacing($options);
-        $this->textRunOptions = TextRunElement::normalizeOptions($options);
+    public static function fromTextRuns(array $textRuns, array $options = []): self
+    {
+        return new self('', $options, $textRuns);
+    }
 
-        if (is_string($textRuns)) {
-            $this->textRuns = [new TextRunElement($textRuns)];
-
-            return;
-        }
-
+    /**
+     * @param array<mixed> $textRuns
+     * @return array<TextRunElement>
+     */
+    private static function normalizeTextRuns(array $textRuns): array
+    {
         $normalizedTextRuns = [];
         foreach ($textRuns as $textRun) {
             if (!$textRun instanceof TextRunElement) {
@@ -76,7 +106,7 @@ class ParagraphElement extends DocxElement
             $normalizedTextRuns[] = $textRun;
         }
 
-        $this->textRuns = $normalizedTextRuns;
+        return $normalizedTextRuns;
     }
 
     public function toXml(RenderContext $context): string

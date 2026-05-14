@@ -24,7 +24,7 @@ final class ParagraphElementTest extends TestCase
 
     public function testRendersMultipleTextRuns(): void
     {
-        $paragraph = new ParagraphElement([
+        $paragraph = ParagraphElement::fromTextRuns([
             new TextRunElement('Hello '),
             new TextRunElement('world'),
         ]);
@@ -37,21 +37,23 @@ final class ParagraphElementTest extends TestCase
 
     public function testPreservesLeadingAndTrailingTextRunWhitespace(): void
     {
-        $paragraph = new ParagraphElement([
+        $paragraph = ParagraphElement::fromTextRuns([
             new TextRunElement(' leading'),
             new TextRunElement('middle'),
             new TextRunElement('trailing '),
         ]);
 
         self::assertSame(
-            '<w:p><w:r><w:t xml:space="preserve"> leading</w:t></w:r><w:r><w:t>middle</w:t></w:r><w:r><w:t xml:space="preserve">trailing </w:t></w:r></w:p>',
+            '<w:p><w:r><w:t xml:space="preserve"> leading</w:t></w:r>'
+            . '<w:r><w:t>middle</w:t></w:r>'
+            . '<w:r><w:t xml:space="preserve">trailing </w:t></w:r></w:p>',
             $paragraph->toXml(new RenderContext())
         );
     }
 
     public function testEscapesTextRuns(): void
     {
-        $paragraph = new ParagraphElement([
+        $paragraph = ParagraphElement::fromTextRuns([
             new TextRunElement('Tom & Jerry'),
             new TextRunElement('<tag>'),
         ]);
@@ -64,7 +66,7 @@ final class ParagraphElementTest extends TestCase
 
     public function testRendersTextRunOptions(): void
     {
-        $paragraph = new ParagraphElement([
+        $paragraph = ParagraphElement::fromTextRuns([
             new TextRunElement('Styled', [
                 'fontFamily' => 'Arial',
                 'fontSize' => 12.5,
@@ -76,14 +78,16 @@ final class ParagraphElementTest extends TestCase
         ]);
 
         self::assertSame(
-            '<w:p><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/><w:sz w:val="25"/><w:color w:val="FF00AA"/><w:b/><w:i/><w:u w:val="single"/></w:rPr><w:t>Styled</w:t></w:r></w:p>',
+            '<w:p><w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial"/>'
+            . '<w:sz w:val="25"/><w:color w:val="FF00AA"/><w:b/><w:i/>'
+            . '<w:u w:val="single"/></w:rPr><w:t>Styled</w:t></w:r></w:p>',
             $paragraph->toXml(new RenderContext())
         );
     }
 
     public function testParagraphTextRunOptionsApplyToAllRuns(): void
     {
-        $paragraph = new ParagraphElement([
+        $paragraph = ParagraphElement::fromTextRuns([
             new TextRunElement('Hello '),
             new TextRunElement('world'),
         ], [
@@ -94,14 +98,19 @@ final class ParagraphElementTest extends TestCase
         ]);
 
         self::assertSame(
-            '<w:p><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="22"/><w:color w:val="336699"/><w:b/></w:rPr><w:t xml:space="preserve">Hello </w:t></w:r><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/><w:sz w:val="22"/><w:color w:val="336699"/><w:b/></w:rPr><w:t>world</w:t></w:r></w:p>',
+            '<w:p><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>'
+            . '<w:sz w:val="22"/><w:color w:val="336699"/><w:b/></w:rPr>'
+            . '<w:t xml:space="preserve">Hello </w:t></w:r><w:r><w:rPr>'
+            . '<w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman"/>'
+            . '<w:sz w:val="22"/><w:color w:val="336699"/><w:b/></w:rPr>'
+            . '<w:t>world</w:t></w:r></w:p>',
             $paragraph->toXml(new RenderContext())
         );
     }
 
     public function testTextRunOptionsOverrideParagraphOptions(): void
     {
-        $paragraph = new ParagraphElement([
+        $paragraph = ParagraphElement::fromTextRuns([
             new TextRunElement('plain', [
                 'bold' => false,
                 'color' => '000000',
@@ -128,7 +137,9 @@ final class ParagraphElementTest extends TestCase
         ]);
 
         self::assertSame(
-            '<w:p><w:pPr><w:jc w:val="center"/><w:spacing w:before="120" w:after="240" w:line="276" w:lineRule="auto"/></w:pPr><w:r><w:t>Hello world</w:t></w:r></w:p>',
+            '<w:p><w:pPr><w:jc w:val="center"/>'
+            . '<w:spacing w:before="120" w:after="240" w:line="276" w:lineRule="auto"/>'
+            . '</w:pPr><w:r><w:t>Hello world</w:t></w:r></w:p>',
             $paragraph->toXml(new RenderContext())
         );
     }
@@ -149,7 +160,7 @@ final class ParagraphElementTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new ParagraphElement(['not a text run']);
+        ParagraphElement::fromTextRuns(['not a text run']);
     }
 
     public function testRejectsInvalidAlignment(): void

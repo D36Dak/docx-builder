@@ -8,7 +8,6 @@ use D36Dak\DocxBuilder\Document\DocxDocument;
 use D36Dak\DocxBuilder\Document\Elements\ImageElement;
 use D36Dak\DocxBuilder\Document\Elements\ParagraphElement;
 use D36Dak\DocxBuilder\Document\Elements\TableElement;
-use D36Dak\DocxBuilder\Document\Elements\TextRunElement;
 use D36Dak\DocxBuilder\Renderer\RenderContext;
 use D36Dak\DocxBuilder\Writer\DocxWriter;
 
@@ -24,7 +23,6 @@ class DocxBuilder
     }
 
     /**
-     * @param string|array<TextRunElement> $textRuns
      * @param array{
      *     alignment?: 'left'|'right'|'center'|'both',
      *     spacingBefore?: int,
@@ -36,21 +34,53 @@ class DocxBuilder
      *     bold?: bool,
      *     italic?: bool,
      *     underline?: bool,
-     * } $options
+     * } $options Array of options for the paragraph. Only applies if $paragraph is a string.
+     * Otherwise pass default options to ParagraphBuilder constructor.
      */
-    public function addParagraph(string|array $textRuns, array $options = []): self
+    public function addParagraph(string|ParagraphElement $paragraph, array $options = []): self
     {
-        $this->document->addElement(new ParagraphElement($textRuns, $options));
+        if (is_string($paragraph)) {
+            $paragraph = new ParagraphElement($paragraph, $options);
+        }
+
+        $this->document->addElement($paragraph);
 
         return $this;
     }
 
     /**
      * @param array<array<string>> $rows
+     * @param array{
+     *     headerRowCount?: int,
+     *     cellOptions?: array{
+     *         alignment?: 'left'|'right'|'center'|'both',
+     *         spacingBefore?: int,
+     *         spacingAfter?: int,
+     *         lineSpacing?: float,
+     *         fontFamily?: string,
+     *         fontSize?: float,
+     *         color?: string,
+     *         bold?: bool,
+     *         italic?: bool,
+     *         underline?: bool,
+     *     },
+     *     headerCellOptions?: array{
+     *         alignment?: 'left'|'right'|'center'|'both',
+     *         spacingBefore?: int,
+     *         spacingAfter?: int,
+     *         lineSpacing?: float,
+     *         fontFamily?: string,
+     *         fontSize?: float,
+     *         color?: string,
+     *         bold?: bool,
+     *         italic?: bool,
+     *         underline?: bool,
+     *     },
+     * } $options
      */
-    public function addTable(array $rows): self
+    public function addTable(array $rows, array $options = []): self
     {
-        $this->document->addElement(new TableElement($rows));
+        $this->document->addElement(new TableElement($rows, $options));
 
         return $this;
     }
