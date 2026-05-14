@@ -48,6 +48,30 @@ class DocxWriter
         }
     }
 
+    public function writeToString(string $documentXml, RenderContext $context): string
+    {
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'docx-builder-');
+
+        if ($temporaryPath === false) {
+            throw new RuntimeException('Could not create temporary DOCX output file.');
+        }
+
+        try {
+            $this->write($temporaryPath, $documentXml, $context);
+
+            $contents = file_get_contents($temporaryPath);
+            if ($contents === false) {
+                throw new RuntimeException(sprintf('Could not read generated DOCX file: %s', $temporaryPath));
+            }
+
+            return $contents;
+        } finally {
+            if (is_file($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+        }
+    }
+
     private function addDefaultPackageFiles(ZipArchive $zip, string $sourceDir): void
     {
         $sourceRoot = realpath($sourceDir);

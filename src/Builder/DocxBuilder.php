@@ -200,13 +200,32 @@ class DocxBuilder
         return $this;
     }
 
-    public function generate(string $outputPath): void
+    /**
+     * Generates the document and saves it to the specified path.
+     * @param string $outputPath Path to which the generated document will be saved.
+     * @return void
+     */
+    public function save(string $outputPath): void
     {
         $renderContext = new RenderContext();
 
         $xmlContent = $this->document->toXml($renderContext);
 
         $this->writer->write($outputPath, $xmlContent, $renderContext);
+    }
+
+    /**
+     * Generates the document and returns the DOCX binary contents as a string.
+     *
+     * @return string The binary contents of the generated DOCX file.
+     */
+    final public function getContents(): string
+    {
+        $renderContext = new RenderContext();
+
+        $xmlContent = $this->document->toXml($renderContext);
+
+        return $this->writer->writeToString($xmlContent, $renderContext);
     }
 
     /**

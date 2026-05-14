@@ -47,7 +47,7 @@ final class DocxBuilderTest extends TestCase
             ])
             ->addFooter($footer)
             ->addParagraph('Body')
-            ->generate($outputPath);
+            ->save($outputPath);
 
         $zip = new ZipArchive();
         self::assertTrue($zip->open($outputPath));
@@ -93,6 +93,37 @@ final class DocxBuilderTest extends TestCase
         self::assertStringContainsString('<w:t>Footer</w:t>', $footerXml);
     }
 
+    public function testGetContentsReturnsGeneratedDocxBinary(): void
+    {
+        $contents = (new DocxBuilder())
+            ->addHeader('Header')
+            ->addParagraph('Body')
+            ->getContents();
+
+        self::assertNotSame('', $contents);
+
+        $outputPath = tempnam(sys_get_temp_dir(), 'docx-builder-contents-');
+        if ($outputPath === false) {
+            self::fail('Could not create temporary output file.');
+        }
+
+        file_put_contents($outputPath, $contents);
+
+        $zip = new ZipArchive();
+        self::assertTrue($zip->open($outputPath));
+
+        $documentXml = $zip->getFromName('word/document.xml');
+        $headerXml = $zip->getFromName('word/header1.xml');
+
+        $zip->close();
+        unlink($outputPath);
+
+        self::assertIsString($documentXml);
+        self::assertIsString($headerXml);
+        self::assertStringContainsString('<w:t>Body</w:t>', $documentXml);
+        self::assertStringContainsString('<w:t>Header</w:t>', $headerXml);
+    }
+
     public function testGeneratesFirstPageHeaderAndFooterParts(): void
     {
         $outputPath = tempnam(sys_get_temp_dir(), 'docx-builder-');
@@ -106,7 +137,7 @@ final class DocxBuilderTest extends TestCase
             ->addFooter('Default footer')
             ->addFirstPageFooter('First footer')
             ->addParagraph('Body')
-            ->generate($outputPath);
+            ->save($outputPath);
 
         $zip = new ZipArchive();
         self::assertTrue($zip->open($outputPath));
