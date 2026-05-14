@@ -38,7 +38,9 @@ class DocxWriter
 
         $this->addDefaultPackageFiles($zip, $sourceDir);
         $this->replaceDocumentXml($zip, $documentXml);
-        $this->addImageRelationships($zip, $sourceDir, $context);
+        $this->addDocumentRelationships($zip, $sourceDir, $context);
+        $this->addHeaderFooterFiles($zip, $context);
+        $this->addHeaderFooterContentTypes($zip, $sourceDir, $context);
         $this->addImageFiles($zip, $context);
 
         if (!$zip->close()) {
@@ -86,7 +88,7 @@ class DocxWriter
         $zip->addFromString('word/document.xml', $documentXml);
     }
 
-    private function addImageRelationships(ZipArchive $zip, string $sourceDir, RenderContext $context): void
+    private function addDocumentRelationships(ZipArchive $zip, string $sourceDir, RenderContext $context): void
     {
         $relationships = $context->getRelationships();
 
@@ -111,7 +113,10 @@ class DocxWriter
         $root = $document->documentElement;
 
         if (!$root instanceof DOMElement) {
-            throw new RuntimeException(sprintf('Document relationships file has no root element: %s', $relationshipsPath));
+            throw new RuntimeException(sprintf(
+                'Document relationships file has no root element: %s',
+                $relationshipsPath
+            ));
         }
 
         $namespace = 'http://schemas.openxmlformats.org/package/2006/relationships';
@@ -121,15 +126,18 @@ class DocxWriter
             $existingIds[$relationship->getAttribute('Id')] = true;
         }
 
-        foreach ($relationships as $relationshipId => $targetPath) {
+        foreach ($relationships as $relationshipId => $relationshipData) {
             if (isset($existingIds[$relationshipId])) {
-                throw new RuntimeException(sprintf('Relationship id already exists in document relationships: %s', $relationshipId));
+                throw new RuntimeException(sprintf(
+                    'Relationship id already exists in document relationships: %s',
+                    $relationshipId
+                ));
             }
 
             $relationship = $document->createElementNS($namespace, 'Relationship');
             $relationship->setAttribute('Id', $relationshipId);
-            $relationship->setAttribute('Type', 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image');
-            $relationship->setAttribute('Target', $targetPath);
+            $relationship->setAttribute('Type', $relationshipData['type']);
+            $relationship->setAttribute('Target', $relationshipData['target']);
 
             $root->appendChild($relationship);
         }
@@ -141,6 +149,91 @@ class DocxWriter
         }
 
         $this->replaceZipString($zip, 'word/_rels/document.xml.rels', $xml);
+    }
+
+    private function addHeaderFooterFiles(ZipArchive $zip, RenderContext $context): void
+    {
+        foreach ($context->getHeaders() as $targetPath => $xml) {
+            $this->replaceZipString($zip, 'word/' . $targetPath, $xml);
+        }
+
+        foreach ($context->getFooters() as $targetPath => $xml) {
+            $this->replaceZipString($zip, 'word/' . $targetPath, $xml);
+        }
+    }
+
+    private function addHeaderFooterContentTypes(ZipArchive $zip, string $sourceDir, RenderContext $context): void
+    {
+        if ($context->getHeaders() === [] && $context->getFooters() === []) {
+            return;
+        }
+
+        $contentTypesPath = $sourceDir . '/[Content_Types].xml';
+
+        if (!is_file($contentTypesPath)) {
+            throw new RuntimeException(sprintf('Content types file does not exist: %s', $contentTypesPath));
+        }
+
+        $document = new DOMDocument();
+        $document->preserveWhiteSpace = false;
+        $document->formatOutput = true;
+
+        if (!$document->load($contentTypesPath)) {
+            throw new RuntimeException(sprintf('Could not load content types file: %s', $contentTypesPath));
+        }
+
+        $root = $document->documentElement;
+
+        if (!$root instanceof DOMElement) {
+            throw new RuntimeException(sprintf('Content types file has no root element: %s', $contentTypesPath));
+        }
+
+        foreach ($context->getHeaders() as $targetPath => $_) {
+            $this->appendContentTypeOverride(
+                $document,
+                $root,
+                '/word/' . $targetPath,
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml'
+            );
+        }
+
+        foreach ($context->getFooters() as $targetPath => $_) {
+            $this->appendContentTypeOverride(
+                $document,
+                $root,
+                '/word/' . $targetPath,
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml'
+            );
+        }
+
+        $xml = $document->saveXML();
+
+        if ($xml === false) {
+            throw new RuntimeException('Could not serialize content types XML.');
+        }
+
+        $this->replaceZipString($zip, '[Content_Types].xml', $xml);
+    }
+
+    private function appendContentTypeOverride(
+        DOMDocument $document,
+        DOMElement $root,
+        string $partName,
+        string $contentType,
+    ): void {
+        $namespace = 'http://schemas.openxmlformats.org/package/2006/content-types';
+
+        foreach ($root->getElementsByTagNameNS($namespace, 'Override') as $override) {
+            if ($override->getAttribute('PartName') === $partName) {
+                return;
+            }
+        }
+
+        $override = $document->createElementNS($namespace, 'Override');
+        $override->setAttribute('PartName', $partName);
+        $override->setAttribute('ContentType', $contentType);
+
+        $root->appendChild($override);
     }
 
     private function addImageFiles(ZipArchive $zip, RenderContext $context): void

@@ -133,7 +133,7 @@ class TextRunElement extends DocxElement
      *     underline?: bool,
      * } $options
      */
-    private function renderRunProperties(array $options): string
+    protected function renderRunProperties(array $options): string
     {
         $properties = '';
 

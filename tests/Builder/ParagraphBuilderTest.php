@@ -48,6 +48,45 @@ final class ParagraphBuilderTest extends TestCase
         );
     }
 
+    public function testBuildsParagraphWithPageNumberFields(): void
+    {
+        $paragraph = (new ParagraphBuilder())
+            ->addTextRun('Page ')
+            ->addPageNumber()
+            ->addTextRun(' of ')
+            ->addTotalPagesNumber()
+            ->build();
+
+        self::assertSame(
+            '<w:p><w:r><w:t xml:space="preserve">Page </w:t></w:r>'
+            . '<w:fldSimple w:instr="PAGE"><w:r><w:t>1</w:t></w:r></w:fldSimple>'
+            . '<w:r><w:t xml:space="preserve"> of </w:t></w:r>'
+            . '<w:fldSimple w:instr="NUMPAGES"><w:r><w:t>1</w:t></w:r></w:fldSimple></w:p>',
+            $paragraph->toXml(new RenderContext())
+        );
+    }
+
+    public function testPageNumberFieldsUseDefaultAndSpecificOptions(): void
+    {
+        $paragraph = (new ParagraphBuilder([
+            'bold' => true,
+            'color' => '336699',
+        ]))
+            ->addPageNumber()
+            ->addTotalPagesNumber([
+                'bold' => false,
+            ])
+            ->build();
+
+        self::assertSame(
+            '<w:p><w:fldSimple w:instr="PAGE"><w:r><w:rPr><w:color w:val="336699"/><w:b/></w:rPr>'
+            . '<w:t>1</w:t></w:r></w:fldSimple><w:fldSimple w:instr="NUMPAGES">'
+            . '<w:r><w:rPr><w:color w:val="336699"/><w:b w:val="false"/></w:rPr>'
+            . '<w:t>1</w:t></w:r></w:fldSimple></w:p>',
+            $paragraph->toXml(new RenderContext())
+        );
+    }
+
     public function testRejectsInvalidDefaultOptions(): void
     {
         $this->expectException(InvalidArgumentException::class);
