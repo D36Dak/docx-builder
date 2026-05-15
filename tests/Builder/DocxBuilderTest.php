@@ -93,6 +93,44 @@ final class DocxBuilderTest extends TestCase
         self::assertStringContainsString('<w:t>Footer</w:t>', $footerXml);
     }
 
+    public function testPassesDocumentOptionsToGeneratedDocument(): void
+    {
+        $contents = (new DocxBuilder([
+            'format' => 'us-letter',
+            'margins' => [
+                'top' => 720,
+                'right' => 900,
+                'bottom' => 720,
+                'left' => 900,
+            ],
+        ]))
+            ->addParagraph('Body')
+            ->getContents();
+
+        $outputPath = tempnam(sys_get_temp_dir(), 'docx-builder-options-');
+        if ($outputPath === false) {
+            self::fail('Could not create temporary output file.');
+        }
+
+        file_put_contents($outputPath, $contents);
+
+        $zip = new ZipArchive();
+        self::assertTrue($zip->open($outputPath));
+
+        $documentXml = $zip->getFromName('word/document.xml');
+
+        $zip->close();
+        unlink($outputPath);
+
+        self::assertIsString($documentXml);
+        self::assertStringContainsString('<w:pgSz w:w="12240" w:h="15840"/>', $documentXml);
+        self::assertStringContainsString(
+            '<w:pgMar w:top="720" w:right="900" w:bottom="720" w:left="900"'
+            . ' w:header="708" w:footer="708" w:gutter="0"/>',
+            $documentXml
+        );
+    }
+
     public function testGetContentsReturnsGeneratedDocxBinary(): void
     {
         $contents = (new DocxBuilder())

@@ -17,9 +17,20 @@ class DocxBuilder
     private DocxDocument $document;
     private DocxWriter $writer;
 
-    public function __construct()
+    /**
+     * @param array{
+     *     format?: 'a4'|'us-letter'|'legal',
+     *     margins?: array{
+     *         top?: int,
+     *         right?: int,
+     *         bottom?: int,
+     *         left?: int,
+     *     },
+     * } $documentOptions
+     */
+    public function __construct(array $documentOptions = [])
     {
-        $this->document = new DocxDocument();
+        $this->document = new DocxDocument($documentOptions);
         $this->writer = new DocxWriter();
     }
 

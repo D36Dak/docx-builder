@@ -7,10 +7,93 @@ namespace D36Dak\DocxBuilder\Tests\Document;
 use D36Dak\DocxBuilder\Document\DocxDocument;
 use D36Dak\DocxBuilder\Document\Elements\ParagraphElement;
 use D36Dak\DocxBuilder\Renderer\RenderContext;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
 final class DocxDocumentTest extends TestCase
 {
+    public function testRendersDocumentFormatAndMargins(): void
+    {
+        $document = new DocxDocument([
+            'format' => 'a4',
+            'margins' => [
+                'top' => 720,
+                'right' => 1080,
+                'bottom' => 720,
+                'left' => 1080,
+            ],
+        ]);
+
+        $xml = $document->toXml(new RenderContext());
+
+        self::assertStringContainsString(
+            '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/>'
+            . '<w:pgMar w:top="720" w:right="1080" w:bottom="720" w:left="1080"'
+            . ' w:header="708" w:footer="708" w:gutter="0"/></w:sectPr>',
+            $xml
+        );
+    }
+
+    public function testRendersUsLetterFormat(): void
+    {
+        $document = new DocxDocument([
+            'format' => 'us-letter',
+        ]);
+
+        self::assertStringContainsString(
+            '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/></w:sectPr>',
+            $document->toXml(new RenderContext())
+        );
+    }
+
+    public function testRendersOnlyProvidedDocumentMargins(): void
+    {
+        $document = new DocxDocument([
+            'margins' => [
+                'top' => 360,
+                'bottom' => 360,
+            ],
+        ]);
+
+        self::assertStringContainsString(
+            '<w:pgMar w:top="360" w:right="1440" w:bottom="360" w:left="1440"'
+            . ' w:header="708" w:footer="708" w:gutter="0"/>',
+            $document->toXml(new RenderContext())
+        );
+    }
+
+    public function testDocumentMarginsMustBeAnArray(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Document margins must be an array.');
+
+        new DocxDocument([
+            'margins' => 360,
+        ]);
+    }
+
+    public function testDocumentFormatIsCaseSensitive(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported document format "A4".');
+
+        new DocxDocument([
+            'format' => 'A4',
+        ]);
+    }
+
+    public function testOnlyPageMarginsCanBeConfigured(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported document margin "header".');
+
+        new DocxDocument([
+            'margins' => [
+                'header' => 360,
+            ],
+        ]);
+    }
+
     public function testRegistersHeaderAndFooterInRenderContext(): void
     {
         $document = new DocxDocument();
